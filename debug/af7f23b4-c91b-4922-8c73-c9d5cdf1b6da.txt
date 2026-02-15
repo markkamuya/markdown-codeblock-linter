@@ -1,0 +1,18 @@
+2026-02-11T20:44:20.924Z [DEBUG] [Query.streamInput] Starting to process input stream
+2026-02-11T20:44:20.924Z [DEBUG] [Query.streamInput] Finished processing 0 messages from input stream
+2026-02-11T20:44:20.924Z [DEBUG] [Query] Calling transport.endInput() to close stdin to CLI process
+2026-02-11T20:44:22.253Z [DEBUG] [Query.streamInput] Starting to process input stream
+2026-02-11T20:44:42.352Z [DEBUG] [Query.streamInput] Finished processing 0 messages from input stream
+2026-02-11T20:44:42.352Z [DEBUG] [Query] Calling transport.endInput() to close stdin to CLI process
+2026-02-13T18:57:32.732Z [DEBUG] [Query.streamInput] Starting to process input stream
+2026-02-13T18:57:32.732Z [DEBUG] [Query.streamInput] Finished processing 0 messages from input stream
+2026-02-13T18:57:32.732Z [DEBUG] [Query] Calling transport.endInput() to close stdin to CLI process
+2026-02-13T18:57:34.175Z [DEBUG] [Query.streamInput] Starting to process input stream
+2026-02-13T20:12:54.572Z [DEBUG] [Query.streamInput] Starting to process input stream
+2026-02-13T20:12:54.572Z [DEBUG] [Query.streamInput] Finished processing 0 messages from input stream
+2026-02-13T20:12:54.572Z [DEBUG] [Query] Calling transport.endInput() to close stdin to CLI process
+2026-02-13T20:12:56.415Z [DEBUG] [Query.streamInput] Starting to process input stream
+2026-02-14T21:43:39.240Z [DEBUG] [Query.streamInput] Finished processing 0 messages from input stream
+2026-02-14T21:43:39.263Z [DEBUG] [Query] Calling transport.endInput() to close stdin to CLI process
+2026-02-14T21:43:39.279Z [DEBUG] [Query.streamInput] Finished processing 0 messages from input stream
+2026-02-14T21:43:39.279Z [DEBUG] [Query] Calling transport.endInput() to close stdin to CLI process
