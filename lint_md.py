@@ -1,12 +1,77 @@
-# lint_md_inline_safe_readable.py
 import re
-import ast
 import sys
+import subprocess
+import tempfile
 from pathlib import Path
 
 MD_FILE = sys.argv[1] if len(sys.argv) > 1 else "withAI.md"
 
-# Step 1: Read the markdown file
+
+# External linter mapping
+LINTERS = {
+    "python": (["python", "-m", "py_compile"], ".py"),
+    "javascript": (["node", "--check"], ".js"),
+    "js": (["node", "--check"], ".js"),
+    "typescript": (["tsc", "--noEmit"], ".ts"),
+    "ts": (["tsc", "--noEmit"], ".ts"),
+    "bash": (["bash", "-n"], ".sh"),
+    "sh": (["bash", "-n"], ".sh"),
+    "json": (["python", "-m", "json.tool"], ".json"),
+    "c": (["gcc", "-fsyntax-only"], ".c"),
+    "cpp": (["g++", "-fsyntax-only"], ".cpp"),
+}
+
+
+# Generic external linter runner
+def lint_with_command(code: str, command: list, suffix: str):
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=suffix, delete=False
+        ) as tmp:
+            tmp.write(code)
+            tmp.flush()
+            tmp_path = tmp.name
+
+        result = subprocess.run(
+            command + [tmp_path],
+            capture_output=True,
+            text=True,
+        )
+
+        Path(tmp_path).unlink(missing_ok=True)
+
+        if result.returncode == 0:
+            return None
+
+        stderr = result.stderr.strip()
+        code_lines = code.splitlines()
+
+        # Try to find which line caused the error
+        for line in code_lines:
+            if line.strip() and line.strip() in stderr:
+                error_line = line.strip()
+                break
+        else:
+            error_line = code_lines[0].strip() if code_lines else "<unknown>"
+
+        # Try extracting error type
+        type_match = re.search(r"(\w*Error)", stderr)
+        error_type = type_match.group(1) if type_match else "Error"
+
+        return {
+            "line": error_line,
+            "type": error_type
+        }
+
+    except Exception as e:
+        return {
+            "line": "<unknown>",
+            "type": "SystemError",
+            "message": str(e),
+        }
+
+
+# Read markdown
 md_path = Path(MD_FILE)
 if not md_path.exists():
     print(f"File {MD_FILE} does not exist!")
@@ -15,7 +80,7 @@ if not md_path.exists():
 with md_path.open("r", encoding="utf-8") as f:
     content = f.read()
 
-# Step 2: Find code blocks and their positions
+# Find code blocks
 codeblock_pattern = re.compile(r"```(.*?)\n(.*?)```", re.DOTALL)
 matches = list(codeblock_pattern.finditer(content))
 
@@ -29,43 +94,40 @@ last_idx = 0
 for match in matches:
     lang = match.group(1).strip().lower() or "python"
     code = match.group(2)
-    
-    # Add content before this block
-    start, end = match.span()
-    output_lines.append(content[last_idx:start])
-    
-    # Keep the original code block
-    output_lines.append(match.group(0))
-    
-    # Only lint Python
-    if lang == "python":
-        try:
-            ast.parse(code)
-            error_msg = None
-        except SyntaxError as e:
-            # Line in markdown where error occurs
-            block_start_line = content[:start].count("\n") + 1
-            error_line_idx = e.lineno - 1
-            code_lines = code.splitlines()
-            if 0 <= error_line_idx < len(code_lines):
-                error_line_content = code_lines[error_line_idx].strip()
-            else:
-                error_line_content = "<could not determine line>"
 
-            error_type = type(e).__name__
-            # New readable format
-            error_msg = f'# error ({error_type}) in "{error_line_content}"'
-        
-        if error_msg:
-            # Ensure newline before and after
-            output_lines.append("\n" + error_msg + "\n")
-    
+    start, end = match.span()
+
+    # Add content before this block
+    output_lines.append(content[last_idx:start])
+
+    # Keep original block
+    output_lines.append(match.group(0))
+
+    error_msg = None
+
+
+    # Lint if supported
+    if lang in LINTERS:
+        cmd, suffix = LINTERS[lang]
+        error = lint_with_command(code, cmd, suffix)
+
+        if error:
+            error_line = error["line"]
+            error_type = error["type"]
+
+            error_msg = f"({lang}) error ({error_type}) in \"{error_line}\""
+
+    # Append error inline
+    if error_msg:
+        output_lines.append("\n" + error_msg + "\n")
+
     last_idx = end
 
-# Append remaining content after last code block
+# Append remaining content
 output_lines.append(content[last_idx:])
 
-# Step 3: Overwrite original file safely
+
+# Overwrite safely
 with md_path.open("w", encoding="utf-8") as f:
     f.writelines(output_lines)
 
